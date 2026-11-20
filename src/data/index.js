@@ -51,7 +51,7 @@ export const NAV_ITEMS = [
   { id: "tools", label: "Tools", group: "Management" },
   { id: "licenses", label: "Licenses", group: "Management" },
   { id: "users", label: "Users", group: "Management" },
-  { id: "requests", label: "Requests", group: "Management", badge: 4 },
+  { id: "requests", label: "Requests", group: "Management" },
   { id: "vault", label: "Vault", group: "Management" },
   { id: "audit", label: "Audit log", group: "Management" },
   { id: "settings", label: "Settings", group: "System" },

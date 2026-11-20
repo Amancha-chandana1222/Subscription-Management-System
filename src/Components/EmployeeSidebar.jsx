@@ -1,29 +1,21 @@
 import { Icons } from "./Icons.jsx";
 import { Avatar } from "./index.jsx";
 import { Link, useLocation } from "react-router-dom";
+import { getCurrentUser, logout as apiLogout } from "../api/index.js";
 
 const EMP_NAV = [
   { id: "emp-home",     label: "My tools",       group: "Overview", icon: "grid"    },
   { id: "emp-request",  label: "Request access", group: "Overview", icon: "plus"    },
   { id: "emp-requests", label: "My requests",    group: "Overview", icon: "message" },
-  { id: "emp-profile",  label: "Profile",        group: "Account",  icon: "user"    },
+  { id: "settings",     label: "Settings",       group: "Account",  icon: "settings" },
 ];
 
 const iconMap = {
   grid:    Icons.grid,
   plus:    Icons.plus,
   message: Icons.message,
-  user:    UserIcon,
+  settings: Icons.settings,
 };
-
-function UserIcon() {
-  return (
-    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
 
 function LogoutIcon() {
   return (
@@ -35,13 +27,13 @@ function LogoutIcon() {
   );
 }
 
-export default function EmployeeSidebar({ user }) {
+export default function EmployeeSidebar({ user: userProp }) {
   const location = useLocation();
+  const user = userProp ?? getCurrentUser();
   const groups   = [...new Set(EMP_NAV.map((n) => n.group))];
 
   const onLogout = () => {
-    localStorage.removeItem("licenseiq_token");
-    localStorage.removeItem("licenseiq_user");
+    apiLogout();
     window.location.href = "/";
   };
 
@@ -123,7 +115,7 @@ export default function EmployeeSidebar({ user }) {
           <Avatar name={user?.name ?? "Employee"} size={30} />
           <div>
             <div style={{ fontSize: 12, fontWeight: 600 }}>{user?.name ?? "Employee"}</div>
-            <div style={{ fontSize: 11, color: "#a0a0a0" }}>Employee</div>
+            <div style={{ fontSize: 11, color: "#a0a0a0" }}>{user?.role ?? "EMPLOYEE"}</div>
           </div>
         </div>
         <button

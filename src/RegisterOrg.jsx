@@ -1,14 +1,6 @@
-// src/pages/RegisterOrg.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createOrganization } from "./api";
-
-const api = (path, body) =>
-  fetch(`/api${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }).then((r) => r.json());
 
 export default function RegisterOrg() {
   const navigate = useNavigate();
@@ -27,10 +19,14 @@ export default function RegisterOrg() {
     setError(null);
     try {
       const res = await createOrganization(form);
-      if (res.status === "success") navigate("/");   // go to login
-      else setError(res.message ?? "Registration failed.");
-    } catch {
-      setError("Network error.");
+      if (res.success) navigate("/login");
+      else setError(res.error ?? res.message ?? "Registration failed.");
+    } catch (err) {
+      if (err?.isNetworkError) {
+        setError("Unable to connect to server.");
+      } else {
+        setError(err?.message || "Registration failed.");
+      }
     } finally {
       setLoading(false);
     }
@@ -79,7 +75,7 @@ export default function RegisterOrg() {
 
         <p style={{ margin: 0, fontSize: 12, color: "#a0a0a0", textAlign: "center" }}>
           Already have an account?{" "}
-          <span onClick={() => navigate("/")}
+          <span onClick={() => navigate("/login")}
             style={{ color: "#0a0a0a", fontWeight: 600, cursor: "pointer" }}>
             Sign in
           </span>

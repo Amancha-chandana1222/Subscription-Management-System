@@ -6,14 +6,23 @@ import { StatusBadge } from "../Components/index.jsx";
 export default function RequestsPage() {
   const [requests, setRequests] = useState([]);
   const [loading,  setLoading]  = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     getAllRequests()
-      .then((response) => setRequests(response.data))
-      .catch(console.error)
+      .then((response) => {
+        const records = Array.isArray(response?.data) ? response.data : [];
+        if (!Array.isArray(response?.data)) {
+          throw new Error("The requests response was not in the expected format.");
+        }
+        setRequests(records);
+      })
+      .catch((requestError) => {
+        console.error("Unable to load requests", requestError);
+        setError(requestError.message || "Unable to load requests.");
+      })
       .finally(() => setLoading(false));
   }, []);
-console.log(requests);
 
   const handle = async (id, action) => {
     try {
@@ -67,7 +76,19 @@ const handleReject = async (id) => {
           </div>
         )}
 
-        {requests.map((r) => (
+        {!loading && error && (
+          <div style={{ padding: "32px 20px", textAlign: "center", color: "#b91c1c", background: "#fef2f2", fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && requests.length === 0 && (
+          <div style={{ padding: "32px 20px", textAlign: "center", color: "#a0a0a0", fontSize: 13 }}>
+            No requests found.
+          </div>
+        )}
+
+        {!error && requests.map((r) => (
           <div key={r.id} style={{
             display: "grid", gridTemplateColumns: "1fr 80px 2fr 90px 150px",
             padding: "14px 20px", borderBottom: "1px solid #f9f9f9",

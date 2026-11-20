@@ -4,6 +4,7 @@ export function StatusBadge({ status }) {
     ACTIVE:   { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0", label: "Active" },
     INACTIVE: { bg: "#fef2f2", color: "#dc2626", border: "#fecaca", label: "Inactive" },
     PENDING:  { bg: "#fffbeb", color: "#d97706", border: "#fde68a", label: "Pending" },
+    INVITED:  { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe", label: "Invited" },
     WARNING:  { bg: "#fffbeb", color: "#d97706", border: "#fde68a", label: "Warning" },
     APPROVED: { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0", label: "Approved" },
     REJECTED: { bg: "#fef2f2", color: "#dc2626", border: "#fecaca", label: "Rejected" },
@@ -146,7 +147,7 @@ export function SectionCard({ title, action, children, noPadding }) {
 }
 
 // Btn.jsx
-export function Btn({ children, variant = "primary", onClick, small }) {
+export function Btn({ children, variant = "primary", onClick, small, disabled }) {
   const base = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: small ? "5px 12px" : "7px 16px",
@@ -160,9 +161,12 @@ export function Btn({ children, variant = "primary", onClick, small }) {
     danger:    { background: "transparent", color: "#dc2626", border: "1px solid #fecaca" },
   };
   return (
-    <button style={{ ...base, ...variants[variant] }} onClick={onClick}
-      onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
-      onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+    <button
+      style={{ ...base, ...variants[variant], opacity: disabled ? 0.6 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.opacity = "0.8"; }}
+      onMouseLeave={e => { e.currentTarget.style.opacity = disabled ? "0.6" : "1"; }}
     >
       {children}
     </button>

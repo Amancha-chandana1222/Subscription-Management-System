@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getUsers, inviteUser } from "../api/index.js";
+import { getUsers, inviteUser, resendInvitation } from "../api/index.js";
 import { SectionCard, Avatar, Btn } from "../Components/index.jsx";
 import { StatusBadge } from "../Components/index.jsx";
 import { Icons } from "../Components/Icons.jsx";
@@ -33,7 +33,7 @@ function InviteUserModal({ onClose, onSuccess }) {
 
       console.log("User invited:", form.email);
     } catch (e) {
-      setError(e.response?.data?.message ?? "Failed to invite user.");
+      setError(e.message || "Failed to invite user.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ function InviteUserModal({ onClose, onSuccess }) {
         display: "flex", flexDirection: "column", gap: 16,
         boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
       }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Invite User</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Create User</h3>
 
         <Field label="Full name">
           <input style={inputStyle} placeholder="e.g. Jane Smith"
@@ -81,7 +81,7 @@ function InviteUserModal({ onClose, onSuccess }) {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
           <Btn variant="ghost" small onClick={onClose} disabled={loading}>Cancel</Btn>
           <Btn variant="primary" small onClick={handleSubmit} disabled={loading}>
-            {loading ? "Inviting…" : "Send invite"}
+            {loading ? "Creating…" : "Create user"}
           </Btn>
         </div>
       </div>
@@ -113,6 +113,8 @@ export default function UsersPage() {
   const [search,     setSearch]     = useState("");
   const [loading,    setLoading]    = useState(true);
   const [showInvite, setShowInvite] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [resendingId, setResendingId] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -123,6 +125,12 @@ export default function UsersPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const resend = async (id) => {
+    setActionError(""); setResendingId(id);
+    try { await resendInvitation(id); } catch (e) { setActionError(e.message || "Unable to resend invitation."); }
+    finally { setResendingId(null); }
+  };
 
   const filtered = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,18 +167,19 @@ export default function UsersPage() {
           </span>
         </div>
         <Btn variant="primary" onClick={() => setShowInvite(true)}>
-          <Icons.plus /> Invite user
+          <Icons.plus /> Create user
         </Btn>
       </div>
 
       <SectionCard noPadding>
+        {actionError && <p style={{ margin: "12px 20px", color: "#dc2626", fontSize: 13 }}>{actionError}</p>}
         <div style={{
-          display: "grid", gridTemplateColumns: "2fr 1fr 1fr 110px 80px",
+          display: "grid", gridTemplateColumns: "2fr 1fr 1fr 110px 80px 150px",
           fontSize: 11, fontWeight: 600, color: "#a0a0a0",
           letterSpacing: "0.05em", textTransform: "uppercase",
           padding: "12px 20px", borderBottom: "1px solid #f0f0f0",
         }}>
-          <span>User</span><span>Role</span><span>Department</span><span>Last active</span><span>Status</span>
+          <span>User</span><span>Role</span><span>Department</span><span>Last active</span><span>Status</span><span>Actions</span>
         </div>
 
         {loading && (
@@ -187,7 +196,7 @@ export default function UsersPage() {
 
         {filtered.map((u) => (
           <div key={u.id} style={{
-            display: "grid", gridTemplateColumns: "2fr 1fr 1fr 110px 80px",
+            display: "grid", gridTemplateColumns: "2fr 1fr 1fr 110px 80px 150px",
             padding: "14px 20px", borderBottom: "1px solid #f9f9f9",
             alignItems: "center", fontSize: 13,
             cursor: "pointer", transition: "background 0.1s",
@@ -208,6 +217,11 @@ export default function UsersPage() {
             <span style={{ color: "#525252" }}>{u.department ?? "—"}</span>
             <span style={{ color: "#a0a0a0" }}>{u.lastActive ?? "—"}</span>
             <StatusBadge status={u.status} />
+            <span>
+              {u.status === "INVITED" && <button onClick={() => resend(u.id)} disabled={resendingId === u.id} style={{ border: "1px solid #d1d5db", borderRadius: 6, padding: "6px 8px", background: "#fff", cursor: "pointer", fontSize: 12 }}>
+                {resendingId === u.id ? "Sending…" : "Resend invitation"}
+              </button>}
+            </span>
           </div>
         ))}
       </SectionCard>

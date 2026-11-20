@@ -11,23 +11,46 @@ export default function Dashboard({ setActive }) {
   const [stats, setStats]   = useState(null);
   const [tools, setTools]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     Promise.all([getDashboardStats(), getTools()])
       .then(([s, t]) => { 
-        console.log(s);
-        console.log(t);
         setStats(s);
-         setTools(t.data); })
-      .catch(console.error)
+        setTools(Array.isArray(t?.data) ? t.data : Array.isArray(t) ? t : []);
+      })
+      .catch((err) => {
+        console.error("Unable to load dashboard data", err);
+        setError(err.message || "Unable to load dashboard data.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <Loading />;
-  console.log(tools);
+  if (error) {
+    return (
+      <SectionCard title="Dashboard unavailable">
+        <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>
+        <p style={{ color: "#888", fontSize: 12 }}>
+          Please try again after checking your connection and account permissions.
+        </p>
+      </SectionCard>
+    );
+  }
+
+  const safeStats = stats ?? {
+    totalMonthlySpend: 0,
+    totalLicenses: 0,
+    utilization: 0,
+    wastedSpend: 0,
+    totalTools: 0,
+    pendingRequests: 0,
+  };
   const alerts = [
     ...(tools.filter(t => t.status === "warning").map(t => ({ text: `${t.name} renewal soon — check capacity`, type: "danger" }))),
-    { text: `${stats.pendingRequests} pending access requests`, type: "info" },
+    ...(safeStats.pendingRequests > 0
+      ? [{ text: `${safeStats.pendingRequests} pending access request${safeStats.pendingRequests === 1 ? "" : "s"}`, type: "info" }]
+      : []),
   ];
 const max = Math.max(...BAR_HEIGHTS);
 
@@ -36,10 +59,10 @@ const max = Math.max(...BAR_HEIGHTS);
 
       {/* KPI row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 14 }}>
-        <StatCard label="Monthly spend"  value={`$${(stats.totalMonthlySpend).toLocaleString()}`} sub={`across ${stats.totalTools} tools`} dark />
-        <StatCard label="Total licenses" value={stats.totalLicenses}       sub={`across ${stats.totalTools} tools`} />
-        <StatCard label="Utilization"    value={`${stats.utilization}%`}   progress={stats.utilization} />
-        <StatCard label="Wasted spend"   value={`$${stats.wastedSpend.toLocaleString()}`} sub="unused licenses" danger />
+        <StatCard label="Monthly spend"  value={`$${safeStats.totalMonthlySpend.toLocaleString()}`} sub={`across ${safeStats.totalTools} tools`} dark />
+        <StatCard label="Total licenses" value={safeStats.totalLicenses}       sub={`across ${safeStats.totalTools} tools`} />
+        <StatCard label="Utilization"    value={`${safeStats.utilization}%`}   progress={safeStats.utilization} />
+        <StatCard label="Wasted spend"   value={`$${safeStats.wastedSpend.toLocaleString()}`} sub="unused licenses" danger />
       </div>
 
       {/* Chart + Alerts */}

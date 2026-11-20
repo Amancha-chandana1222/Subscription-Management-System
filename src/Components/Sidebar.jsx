@@ -1,7 +1,9 @@
 import { NAV_ITEMS } from "../data/index.js";
 import { Icons } from "./Icons.jsx";
 import { Avatar } from "./index.jsx";
-import { Link, useNavigate,useLocation} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { getCurrentUser, logout as apiLogout } from "../api/index.js";
+import { useNotifications } from "./NotificationsContext.jsx";
 
 const iconMap = {
   dashboard: Icons.grid,
@@ -18,13 +20,13 @@ const iconMap = {
 
 export default function Sidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const user = getCurrentUser();
+  const { unreadCountFor } = useNotifications();
   const groups = [...new Set(NAV_ITEMS.map((n) => n.group))];
-const onLogout = () => {
-  localStorage.removeItem("licenseiq_token");
-  localStorage.removeItem("licenseiq_user");
-window.location.href = "/";
-}
+  const onLogout = () => {
+    apiLogout();
+    window.location.href = "/";
+  };
 
   return (
     <div
@@ -135,7 +137,7 @@ window.location.href = "/";
 
                     <span style={{ flex: 1 }}>{item.label}</span>
 
-                    {item.badge && (
+                    {item.id === "requests" && unreadCountFor("Requests") > 0 && (
                       <span
                         style={{
                           background: isActive ? "#000" : "#fff",
@@ -146,7 +148,7 @@ window.location.href = "/";
                           borderRadius: 999,
                         }}
                       >
-                        {item.badge}
+                        {unreadCountFor("Requests")}
                       </span>
                     )}
                   </div>
@@ -175,12 +177,14 @@ window.location.href = "/";
             padding: "6px 10px",
           }}
         >
-          <Avatar name="Arjun Kumar" size={32} />
+          <Avatar name={user?.name ?? "Admin"} size={32} />
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>
-              Arjun Kumar
+              {user?.name ?? "Admin"}
             </div>
-            <div style={{ fontSize: 11, color: "#6b7280" }}>Admin</div>
+            <div style={{ fontSize: 11, color: "#6b7280" }}>
+              {user?.role ?? "ADMIN"}
+            </div>
           </div>
         </div>
 

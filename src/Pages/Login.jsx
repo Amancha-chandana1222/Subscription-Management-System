@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { login as apiLogin } from "../api/index.js";
-import { useNavigate } from "react-router-dom";
+
 export default function LoginPage({ onLogin }) {
   const [role, setRole] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+
   const DEMO_CREDENTIALS = {
-    admin:    { email: "arjun@acme.com",  password: "Welcome@123" },
-    employee: { email: "priya@acme.com",  password: "Welcome@123" },
+    admin:    { email: "test@acme.com",    password: "admin123" },
+    employee: { email: "newuser@acme.com", password: "admin123" },
   };
 
   const handleSubmit = async (e) => {
@@ -19,26 +19,10 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-    fetch(`${import.meta.env.VITE_Backend_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ "email": email, "password": password }),
-    }).then(res => {
-
-      if (res.ok) {
-        return res.json();
-      } else {
-        throw new Error("Invalid email or password");
-      }
-    }).then(data => {
-      console.log("Login successful:", data.data);
-      const { accessToken, name, email, role ,userId} = data.data;
-      localStorage.setItem("licenseiq_token", accessToken);
-      localStorage.setItem("licenseiq_user", JSON.stringify({ name, email, role, userId }));
+      const data = await apiLogin(email, password);
+      if (onLogin) onLogin(data.role);
       window.location.href = "/";
-    })
-    }catch (err) {
-      console.error("Login failed:", err);
+    } catch (err) {
       setError(err.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
@@ -55,7 +39,6 @@ export default function LoginPage({ onLogin }) {
     return (
       <div style={styles.shell}>
         <div style={styles.card}>
-          {/* Logo */}
           <div style={styles.logo}>
             <div style={styles.logoBox} />
             <span style={styles.logoText}>LicenseIQ</span>
@@ -78,6 +61,9 @@ export default function LoginPage({ onLogin }) {
               onClick={() => setRole("employee")}
             />
           </div>
+          <div style={{ textAlign: "center", marginTop: 18 }}>
+            <a href="/forgot-password" style={{ fontSize: 12, color: "#525252" }}>Forgot Password?</a>
+          </div>
         </div>
       </div>
     );
@@ -86,13 +72,11 @@ export default function LoginPage({ onLogin }) {
   return (
     <div style={styles.shell}>
       <div style={styles.card}>
-        {/* Logo */}
         <div style={styles.logo}>
           <div style={styles.logoBox} />
           <span style={styles.logoText}>LicenseIQ</span>
         </div>
 
-        {/* Role pill */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
             <h1 style={styles.heading}>Sign in</h1>
@@ -142,6 +126,10 @@ export default function LoginPage({ onLogin }) {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <div style={{ textAlign: "right", marginTop: 10 }}>
+          <a href="/forgot-password" style={{ fontSize: 12, color: "#525252" }}>Forgot Password?</a>
+        </div>
 
         <button onClick={fillDemo} style={{
           width: "100%", marginTop: 12, fontSize: 12, color: "#a0a0a0",

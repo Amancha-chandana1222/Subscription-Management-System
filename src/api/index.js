@@ -1,11 +1,19 @@
-import { get, post, put, patch, del } from "./client.js";
+import { get, post, put, del } from "./client.js";
 
 // ── Auth ─────────────────────────────────────────────────────
 export async function login(email, password) {
-  const data = await post("/auth/login", { email, password });
-  // Store token for subsequent requests
-  localStorage.setItem("licenseiq_token", data.token);
-  localStorage.setItem("licenseiq_user",  JSON.stringify({ name: data.name, email: data.email, role: data.role }));
+  const res = await post("/auth/login", { email, password });
+  const data = res.data ?? res;
+  localStorage.setItem("licenseiq_token", data.accessToken);
+  localStorage.setItem("licenseiq_user", JSON.stringify({
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    userId: data.userId,
+    department: data.department ?? null,
+    organizationId: data.organizationId ?? null,
+    organizationName: data.organizationName ?? null,
+  }));
   return data;
 }
 
@@ -16,7 +24,17 @@ export function logout() {
 
 export function getCurrentUser() {
   const u = localStorage.getItem("licenseiq_user");
-  return u ? JSON.parse(u) : null;
+  if (!u) return null;
+  try {
+    return JSON.parse(u);
+  } catch {
+    logout();
+    return null;
+  }
+}
+
+export function updateCurrentUser(user) {
+  localStorage.setItem("licenseiq_user", JSON.stringify(user));
 }
 
 // ── Dashboard ────────────────────────────────────────────────
@@ -37,6 +55,16 @@ export const revokeLicense   = (id)  => del(`/licenses/${id}/revoke`);
 // ── Users ────────────────────────────────────────────────────
 export const getUsers      = ()    => get("/users");
 export const inviteUser    = (u)   => post("/users/invite", u);
+export const resendInvitation = (id) => post(`/users/${id}/resend-invitation`);
+export const getMyProfile = () => get("/users/me");
+export const updateMyProfile = (data) => put("/users/me", data);
+export const getMyNotificationPreferences = () => get("/users/me/notification-preferences");
+export const updateMyNotificationPreferences = (data) => put("/users/me/notification-preferences", data);
+export const changeMyPassword = (data) => put("/users/me/password", data);
+export const validateInvitation = (token) => get(`/auth/invitations/validate?token=${encodeURIComponent(token)}`);
+export const acceptInvitation = (payload) => post("/auth/invitations/accept", payload);
+export const forgotPassword = (email) => post("/auth/forgot-password", { email });
+export const resetPassword = (payload) => post("/auth/reset-password", payload);
 
 // ── Access Requests ──────────────────────────────────────────
 export const getAllRequests   = ()           => get("/requests");
@@ -46,13 +74,12 @@ export const updateRequest    = (id, status) => put(`/requests/${id}/approve`, {
 export const deleteRequest    = (id)           => put(`/requests/${id}/reject`);
 // ── Audit Logs ───────────────────────────────────────────────
 export const getAuditLogs = () => get("/audit-logs");
+export const getAuditLogsForExport = () => get("/audit-logs/export", "blob");
 
-//Organization 
-export const getOrganization = () => get("/orgs");
-export const createOrganization = (form) => post("/orgs/register", form);
-
-
-
+// Organization — public register creates org + first ADMIN
+export const getOrganization = () => get("/orgs/current");
+export const updateOrganization = (form) => put("/orgs/current", form);
+export const createOrganization = (form) => post("/auth/register", form);
 
 // ── Vault ────────────────────────────────────────────────────
 export const getVault         = ()    => get("/credentials");
